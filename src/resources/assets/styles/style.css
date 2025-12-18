@@ -23,9 +23,8 @@
 	.text-balance {
 		text-wrap: balance;
 	}
-	.no-touch {
-		user-select: none;
-		-webkit-user-drag: none;
+	.z-max {
+		z-index: 9999;
 	}
 }
 

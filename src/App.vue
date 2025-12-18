@@ -1,5 +1,5 @@
 <template>
-	<!-- Pages render by router -->
+	<!-- Pages render by router (@/router) -->
   <router-view />
 </template>
 
