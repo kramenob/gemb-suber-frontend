@@ -1,6 +1,12 @@
 <template>
-	<!-- Pages render by router (@/router) -->
-  <router-view />
+	<DefaultLayout>
+		<!-- Pages render by router (@/router) -->
+		<RouterView />
+	</DefaultLayout>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+
+	import { DefaultLayout } from '@/resources/layouts'
+
+</script>

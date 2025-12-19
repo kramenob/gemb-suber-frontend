@@ -2,15 +2,15 @@
 
 // frontend/src/services/api.ts
 import { APP_URL } from '@/config'
-import type { TariffData, ClientData, PaymentResponse, PaidContractsResponse } from './types'
+import type { Tariff, Client, PaymentResponse, PaidContractsResponse } from './types'
 
 // получение тарифов
-export async function fetchTariff(code: string): Promise<TariffData | null> {
+export async function fetchTariff(code: string): Promise<Tariff | null> {
   try {
     const res = await fetch(`${APP_URL}/api/v1/tariff?code=${encodeURIComponent(code)}`)
     if (!res.ok) throw new Error(`Tariff fetch failed: ${res.status}`)
     const json = await res.json()
-    return json.data as TariffData
+    return json.data as Tariff
   } catch (e) {
     console.error(e)
     return null
@@ -18,7 +18,7 @@ export async function fetchTariff(code: string): Promise<TariffData | null> {
 }
 
 // создание транзакции для оплаты
-export async function createPayment(contract: string, client: ClientData, amount: number): Promise<PaymentResponse | null> {
+export async function createPayment(contract: string, client: Client, amount: number): Promise<PaymentResponse | null> {
   try {
     const res = await fetch(`${APP_URL}/api/v1/payment`, {
       method: 'POST',
