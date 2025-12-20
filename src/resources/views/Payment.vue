@@ -33,7 +33,7 @@
 				<Divider />
 
 				<!-- contract -->
-				<Contracts :data="contracts" />
+				<Contracts :data="contracts" @pay="openPayModal" />
 
 				<Divider />
 
@@ -45,26 +45,43 @@
 	</div>
 
 	<!-- Modal -->
-	<Modal>
+	<Modal :opened="showPayModal" @close="showPayModal = false">
 
 		<!-- pay confirmation -->
 		<div :class="cn([ 'flex flex-col space-y-6', ])">
 			<div :class="cn([ 'flex flex-col space-y-2', ])">
 				<div :class="cn([ 'flex flex-col', ])">
 					<span :class="cn([ 'text-2xl font-semibold', ])">Оплата услуги по договору</span>
-					<span :class="cn([ 'text-2xl font-semibold', ])">{{ docTitle }}</span>
+					<span :class="cn([ 'text-2xl font-semibold', ])">{{ `${activeContract?.id} от ${activeContract?.date}` }}</span>
 				</div>
 				<div :class="cn([ 'w-full max-w-[calc(var(--px)*480)]', ])">
 					<span>Укажите адрес электронной почты, на которую будут поступать чеки и напоминания об оплате, а также номер телефона для связи, в случае необходимости.</span>
 				</div>
-				<div :class="cn([ 'flex flex-col space-y-2', ])">
+				<div :class="cn([ 'flex flex-col space-y-4', ])">
 					<div :class="cn([ 'flex flex-col space-y-2', ])">
-						<Input v-model="payForm.email" type="email" name="email" placeholder="E-mail" />
-						<Input v-model="payForm.phone" type="tel"   name="phone" placeholder="Номер телефона" />
+						<Input
+							v-model="payForm.email"
+							type="email"
+							name="email"
+							placeholder="E-mail"
+						/>
+						<!-- :disabled="userState.locked" -->
+						<Input
+							v-model="payForm.phone"
+							type="tel"
+							name="phone"
+							placeholder="Номер телефона"
+						/>
+						<!-- :disabled="userState.locked" -->
 					</div>
 					<div :class="cn([ 'flex flex-col space-y-2', ])">
-						<Checkbox name="keep-credentials" />
-						<Checkbox checkless />
+						<!-- <Checkbox
+							name="keep-credentials"
+							v-model="userState.locked"
+						>Использовать для каждого договора</Checkbox> -->
+						<Checkbox
+							:checkless="true"
+						>Нажимая Оплатить, Вы даёте согласие на обработку персональных данных</Checkbox>
 					</div>
 				</div>
 			</div>
@@ -101,6 +118,13 @@
 	const contracts = ref<Contract[]>([])
 	const _client = ref<Client | null>(null)
 	const _tariff = ref<Tariff | null>(null)
+
+	const userState = reactive({
+		email: '',
+		phone: '',
+		// locked: true
+	})
+
 
 	onMounted(async () => {
 		loadClient()
@@ -154,13 +178,14 @@
 	}
 
 	function buildContractsForView() {
-		contracts.value = contractsList.value.map((c, index) => ({
-			id:     c.id,
+		contracts.value = contractsList.value.map(c => ({
+			id: c.id,
 			number: c.id?.replace(/\D/g, ''),
 			tariff: _tariff.value?.name || '—',
 			date: c.date || new Date().toLocaleDateString('ru-RU'),
 			service: c.serviceData?.name || c.service || '—',
-			price: c.serviceData?.cost || 0
+			price: c.serviceData?.cost || 0,
+			paid: Boolean(c.paid),
 		}))
 	}
 
@@ -177,10 +202,18 @@
 		phone: ''
 	})
 
-	function openPayModal(contract: ContractItem) {
-		activeContract.value = contract
-		payForm.email = ''
-		payForm.phone = ''
+	function openPayModal(contract: Contract) {
+		const original = contractsList.value.find(c => c.id === contract.id)
+		if (!original) return
+
+		if (original.paid) {
+			console.warn('Contract already paid:', original.id)
+			return
+		}
+
+		activeContract.value = original
+		payForm.email = userState.email
+		payForm.phone = userState.phone
 		showPayModal.value = true
 	}
 
@@ -204,61 +237,72 @@
 		form.submit()
 	}
 
-async function submitPayment() {
-	if (!activeContract.value) return
-	const c = activeContract.value
+	async function submitPayment() {
+		if (!activeContract.value || !activeContract.value.serviceData) return
 
-	if (!payForm.email) {
-		alert('Email обязателен')
-		return
-	}
+		const c = activeContract.value
 
-	// Compose a client object for payment, using the loaded client and form fields
-	const paymentClient: Client = {
-		...(_client.value ?? {
-			firstname: '',
-			middlename: '',
-			lastname: '',
-			fullname: '',
-			appeal: ''
-		}),
-		email: payForm.email,
-		phone: payForm.phone.replace(/\D+/g, '')
-	}
-
-	try {
-		const res = await createPayment(
-			c.id,
-			paymentClient,
-			c.serviceData!.cost
-		)
-
-		if (!res?.formUrl) {
-			console.error('Payment API error', res)
+		if (c.paid) {
+			console.error('Attempt to pay already paid contract', c.id)
 			return
 		}
-		if (res?.formUrl) {
-			const width = 500
-			const height = 700
-			const left = window.screenX + (window.innerWidth - width) / 2
-			const top = window.screenY + (window.innerHeight - height) / 2
 
-			window.open(
-				res.formUrl,
-				'PaymentPopup',
-				`width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+		const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payForm.email)
+		const phoneValid = /^\d{10,15}$/.test(payForm.phone.replace(/\D+/g, ''))
+
+		if (!emailValid) {
+			alert('Некорректный email')
+			return
+		}
+		if (!phoneValid) {
+			alert('Некорректный телефон')
+			return
+		}
+
+		userState.email = payForm.email
+		userState.phone = payForm.phone
+
+		const paymentClient: Client = {
+			...(_client.value ?? {
+				firstname: '',
+				middlename: '',
+				lastname: '',
+				fullname: '',
+				appeal: ''
+			}),
+			email: payForm.email,
+			phone: payForm.phone.replace(/\D+/g, '')
+		}
+
+		try {
+			if (!activeContract.value?.serviceData) {
+				console.error('Service data not loaded for contract', activeContract.value)
+				return
+			}
+
+			const res = await createPayment(
+				c.id,
+				paymentClient,
+				c.serviceData.cost
 			)
 
+			if (!res?.formUrl) {
+				console.error('Payment API error', res)
+				return
+			}
+
+			window.open(res.formUrl, 'PaymentPopup', 'width=500,height=700,resizable=yes,scrollbars=yes')
+
 			c.paid = true
+
+			buildContractsForView()
+
 			saveProgress()
 			showPayModal.value = false
-		} else {
-			console.error('Payment API error', res)
+		} catch (e) {
+			console.error('Payment failed', e)
 		}
-	} catch (e) {
-		console.error('Payment failed', e)
 	}
-}
 
 	function saveProgress() {
 		const raw = sessionStorage.getItem('state')

@@ -6,6 +6,7 @@
 				relative
 				overflow-hidden
 				w-full aspect-375/300
+				dark:opacity-50
 			">
 				<figure
 					:class="cn([

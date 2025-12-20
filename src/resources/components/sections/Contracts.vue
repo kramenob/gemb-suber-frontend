@@ -22,7 +22,13 @@
 		<div :class="cn([
 			'grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3', '',
 		])">
-			<CardContract v-for="(i, k) in contracts" :key="k" :data="i" :delay="k * 100" />
+			<CardContract
+			  v-for="(i, k) in contracts"
+			  :key="k"
+			  :data="i"
+			  :delay="k * 100"
+			  @pay="onPay"
+			/>
 		</div>
 		<!-- results -->
 		<div :class="cn([
@@ -30,7 +36,7 @@
 			'w-full',
 		])">
 			<p>Общая стоимость тарифа: {{ formatPrice(paymentSum, false) }} рублей.</p>
-			<p>Общая сумма ежемесячного списания: {{ paymentPart && formatPrice(paymentPart, false) }} рублей.</p>
+			<p>Общая сумма ежемесячного списания: {{ formatPrice(paymentPart, false) }} рублей.</p>
 		</div>
 	</div>
 
@@ -50,6 +56,14 @@
 		data: Contract[]
 	}>()
 
+	const emit = defineEmits<{
+	  (e: 'pay', contract: Contract): void
+	}>()
+	function onPay(contract: Contract) {
+	  emit('pay', contract)
+	}
+
+
 	const contracts = computed(() => props.data ?? {})
 
 	const paymentSum = computed(() => {
@@ -61,7 +75,7 @@
 	const paymentPart = computed(() => {
 		return paymentSum.value
 			? Math.floor(paymentSum.value / 12)
-			: null
+			: 0
 	})
 
 </script>

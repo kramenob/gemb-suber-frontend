@@ -43,6 +43,7 @@ export interface Contract {
 	date:     string,
 	service:  string,
 	price:    number,
+	paid?:    boolean
 }
 
 export interface ContractItem {

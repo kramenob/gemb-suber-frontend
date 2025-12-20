@@ -1,19 +1,21 @@
 <template>
 	<button :class="cn([
 		'smooth',
-
 		'flex items-center justify-center',
 		'min-w-60 w-full',
-
-		'text-background',
-		'bg-brand',
-
 		'px-6 py-3',
-		'',
-		
-		'md:hover:bg-brand-dark md:active:bg-brand-deep active:bg-brand-deep',
-
-		'cursor-pointer',
+		disabled
+			? [
+				'',
+				'text-gray',
+				'bg-gray-dark',
+				'cursor-not-allowed',
+		] : [
+				'text-background',
+				'bg-brand',
+				'md:hover:bg-brand-dark md:active:bg-brand-deep active:bg-brand-deep',
+				'cursor-pointer',
+				]
 	], props.class)">
 		<slot />
 	</button>
@@ -26,6 +28,7 @@
 	import { cn } from '@/utils'
 
 	const props = defineProps<{
+		disabled?: boolean
 		class?: HTMLAttributes['class']
 	}>()
 

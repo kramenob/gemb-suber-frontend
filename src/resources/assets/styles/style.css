@@ -61,7 +61,20 @@
 	}
 
 	.dark {
-		/* --background: 0 0% 3.9%; */
+		/** Colors */
+			--background:  oklch( 0.252  0       0    );
+			--foreground:  oklch( 0.8761 0       0    );
+
+			--brand:       oklch( 0.5736 0.2029 27.89 );
+			--brand-dark:  oklch( 0.5069 0.192  28.76 );
+			--brand-deep:  oklch( 0.4506 0.1632 28.29 );
+
+			--nymph:       oklch( 0.2769 0.0262 18.87 );
+			--nymph-embra: oklch( 0.2649 0.0124 26.36 );
+
+			--gray-light:  oklch( 0.3368 0       0    );
+			--gray:        oklch( 0.4568 0       0    );
+			--gray-dark:   oklch( 0.4568 0       0    );
 	}
 
 }
