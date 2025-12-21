@@ -42,14 +42,14 @@
 				])">
 					<span :class="cn([ 'text-lg font-medium', ])">{{ 'Условия оплаты' }}</span>
 					<div
-						v-for="i in price"
+						v-for="(i, k) in price"
 						:class="cn([
 							'flex flex-row space-x-8',
 							'',
 						])"
 					>
 						<span :class="cn([ 'block',           'font-light text-nowrap',   ])">{{ i.label }}<span :class="cn([ 'sr-only', ])">{{ ':' }}</span></span>
-						<span :class="cn([ 'block', 'w-full', 'text-right font-semibold', ])">{{ formatPrice(i.value) }}<span :class="cn([ 'sr-only', ])">{{ i === about[about.length - 1] ? '.' : ';' }}</span></span>
+						<span :class="cn([ 'block', 'w-full', 'text-right font-semibold', ])">{{ formatPrice(i.value ?? 0) }}<span :class="cn([ 'sr-only', ])">{{ k === about.length - 1 ? '.' : ';' }}</span></span>
 					</div>
 				</div>
 				<!-- caption -->

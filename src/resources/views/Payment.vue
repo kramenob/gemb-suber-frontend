@@ -16,36 +16,41 @@
 				])">
 					<h1>{{ APP_TITLE }}</h1>
 				</div>
-				<!-- introduction -->
-				<div :class="cn([
-					'flex flex-col space-y-2',
-					'w-full max-w-[calc(var(--px)*900)]',
-				])">
-					<p><strong>{{ client?.appeal }}</strong>, Вы находитесь на платежном сервисе Гемабанка.</p>
-					<p>Пожалуйста, ознакомьтесь с информацией ниже и перейдите к оплате. Оплата услуг по тарифу «{{ _tariff?.name }}» ({{ _tariff?.code }}) осуществляется <strong>ежемесячно, отдельно по каждому договору</strong>.</p>
-				</div>
+				<template v-if="showErrorModal">
+					<Skeleton />
+				</template>
+				<template v-else>
+					<!-- introduction -->
+					<div :class="cn([
+						'flex flex-col space-y-2',
+						'w-full max-w-[calc(var(--px)*900)]',
+					])">
+						<p><strong>{{ client?.appeal }}</strong>, Вы находитесь на платежном сервисе Гемабанка.</p>
+						<p>Пожалуйста, ознакомьтесь с информацией ниже и перейдите к оплате. Оплата услуг по тарифу «{{ _tariff?.name }}» ({{ _tariff?.code }}) осуществляется <strong>ежемесячно, отдельно по каждому договору</strong>.</p>
+					</div>
 
-				<Divider />
+					<Divider />
 
-				<!-- how it works -->
-				<HowItWorks />
+					<!-- how it works -->
+					<HowItWorks />
 
-				<Divider />
+					<Divider />
 
-				<!-- contract -->
-				<Contracts :data="contracts" @pay="openPayModal" />
+					<!-- contract -->
+					<Contracts :data="contracts" @pay="openPayModal" />
 
-				<Divider />
+					<Divider />
 
-				<!-- questions -->
-				<Questions />
+					<!-- questions -->
+					<Questions />
+				</template>
 			</div>
 
 		</Container>
 	</div>
 
 	<!-- Modal -->
-	<Modal :opened="showPayModal" @close="showPayModal = false">
+	<Modal v-if="!showErrorModal" :opened="showPayModal" @close="showPayModal = false">
 
 		<!-- pay confirmation -->
 		<div :class="cn([ 'flex flex-col space-y-6', ])">
@@ -93,6 +98,25 @@
 
 	</Modal>
 
+	<!-- Modal -->
+	<Modal v-if="showErrorModal" opened closeless>
+		<!-- error -->
+		<div :class="cn([ 'flex flex-col space-y-8', ])">
+			<div :class="cn([ 'flex flex-col space-y-4', ])">
+				<div :class="cn([ 'flex flex-col', ])">
+					<span :class="cn([ 'text-2xl font-semibold', ])">Упс! Что-то пошло не так...</span>
+				</div>
+				<div :class="cn([ 'w-full max-w-[calc(var(--px)*480)]', ])">
+					<span>Похоже, Вы попали сюда случайно или ссылка сломана.</span>
+				</div>
+			</div>
+			<Button
+				title="Вернуться на главную"
+				@click="goToHome"
+			>Вернуться на главную</Button>
+		</div>
+	</Modal>
+
 </template>
 
 <script setup lang="ts">
@@ -106,11 +130,14 @@
 
 	import { Container, Checkbox, Input, Button, Divider } from '@/resources/components/ui'
 	import { Modal                                       } from '@/resources/components/shared'
-	import { HowItWorks, Contracts, Questions            } from '@/resources/components/sections'
+	import { HowItWorks, Contracts, Questions, Skeleton  } from '@/resources/components/sections'
 
 	import { cn } from '@/utils'
 
 	const APP_TITLE = import.meta.env.VITE_APP_TITLE
+	const MAIN_SITE_URL = import.meta.env.VITE_MAIN_SITE_URL
+
+	const showErrorModal = ref(false)
 
 	const { client, loadClient } = useClient()
 
@@ -136,7 +163,10 @@
 
 	function loadFromSession() {
 		const raw = sessionStorage.getItem('state')
-		if (!raw) return
+		if (!raw) {
+			showErrorModal.value = true
+			return
+		}
 
 		const data = JSON.parse(raw)
 
@@ -165,7 +195,10 @@
 	async function loadTariff() {
 		if (!_tariff?.value?.code) return
 		const tariff = await fetchTariff(_tariff?.value?.code)
-		if (!tariff) return
+		if (!tariff) {
+			showErrorModal.value = true
+			return
+		}
 		_tariff.value = {
 			...tariff,
 			code: _tariff.value.code
@@ -283,7 +316,7 @@
 			const res = await createPayment(
 				c.id,
 				paymentClient,
-				c.serviceData.cost
+				c.serviceData?.cost ?? 0,
 			)
 
 			if (!res?.formUrl) {
@@ -313,6 +346,10 @@
 			paid: c.paid
 		}))
 		sessionStorage.setItem('state', JSON.stringify(data))
+	}
+
+	function goToHome() {
+		window.location.replace(MAIN_SITE_URL)
 	}
 
 </script>

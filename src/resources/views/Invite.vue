@@ -17,115 +17,7 @@
 					<h1>{{ APP_TITLE }}</h1>
 				</div>
 				<!-- Skeletons -->
-				<div :class="cn([
-					'flex flex-col space-y-8',
-				])">
-					<!-- Welcoming text -->
-					<div :class="cn([ 'flex flex-col space-y-2', ])">
-						<figure
-							v-for="i in 3"
-							:key="i"
-							:class="cn([
-								'skeleton skeleton-text-base',
-								i === 1 && 'w-6/10',
-								i === 2 && 'w-8/10',
-								i === 3 && 'w-4/10',
-							])"
-						></figure>
-					</div>
-					<div :class="cn([ 'flex flex-col space-y-6', ])">
-						<!-- How it works title -->
-						<div :class="cn([ 'flex flex-row justify-center', 'w-full', ])">
-							<figure
-								:class="cn([
-									'skeleton skeleton-text-h1',
-									'w-2/10',
-								])"
-							></figure>
-						</div>
-						<!-- How it works title -->
-						<div :class="cn([ 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4', ])">
-							<div
-								v-for="i in 3"
-								:key="i"
-								:class="cn([ 'flex flex-col space-y-6', 'w-full', ])"
-							>
-								<figure
-									:class="cn([
-										'skeleton',
-										'w-full h-75',
-									])"
-								></figure>
-								<Divider :class="cn([ 'bg-gray-light', ])" />
-								<div :class="cn([ 'flex flex-col space-y-2', 'px-6', ])">
-									<figure
-										v-for="i in 3"
-										:key="i"
-										:class="cn([
-											'skeleton skeleton-text-base',
-											i === 1 && 'w-6/10',
-											i === 2 && 'w-8/10',
-											i === 3 && 'w-4/10',
-										])"
-									></figure>
-								</div>
-							</div>
-						</div>
-					</div>
-					<Divider :class="cn([ 'bg-gray-light', ])" />
-					<div :class="cn([ 'flex flex-col space-y-6', ])">
-						<!-- Contracts' title -->
-						<div :class="cn([ 'flex flex-row justify-center', 'w-full', ])">
-							<figure
-								:class="cn([
-									'skeleton skeleton-text-h1',
-									'w-2/10',
-								])"
-							></figure>
-						</div>
-						<!-- Contracts' description -->
-						<div :class="cn([ 'flex flex-col space-y-2', ])">
-							<figure
-								v-for="i in 3"
-								:key="i"
-								:class="cn([
-									'skeleton skeleton-text-base',
-									i === 1 && 'w-9/10',
-									i === 2 && 'w-7/10',
-									i === 3 && 'w-3/10',
-								])"
-							></figure>
-						</div>
-						<!-- Contracts' cards -->
-						<div :class="cn([ 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4', ])">
-							<div
-								v-for="i in 3"
-								:key="i"
-								:class="cn([ 'flex flex-col space-y-6', 'w-full', ])"
-							>
-								<figure
-									:class="cn([
-										'skeleton',
-										'w-full h-75',
-									])"
-								></figure>
-								<Divider :class="cn([ 'bg-gray-light', ])" />
-								<div :class="cn([ 'flex flex-col space-y-2', 'px-6', ])">
-									<figure
-										v-for="i in 3"
-										:key="i"
-										:class="cn([
-											'skeleton skeleton-text-base',
-											i === 1 && 'w-6/10',
-											i === 2 && 'w-8/10',
-											i === 3 && 'w-4/10',
-										])"
-									></figure>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
+				<Skeleton />
 			</div>
 
 		</Container>
@@ -133,7 +25,8 @@
 
 	<!-- Modal -->
 	<Modal opened closeless>
-		<div :class="cn([ 'flex flex-col space-y-6', ])">
+		<!-- welcome -->
+		<div v-if="!showErrorModal" :class="cn([ 'flex flex-col space-y-6', ])">
 			<div :class="cn([ 'flex flex-col space-y-2', ])">
 				<div :class="cn([ 'flex flex-col', ])">
 					<span :class="cn([ 'text-2xl font-semibold', ])">Здравствуйте,</span>
@@ -147,6 +40,21 @@
 				title="Перейти к оплате"
 				@click="goToPayment"
 			>Перейти к оплате</Button>
+		</div>
+		<!-- error -->
+		<div v-if="showErrorModal" :class="cn([ 'flex flex-col space-y-8', ])">
+			<div :class="cn([ 'flex flex-col space-y-4', ])">
+				<div :class="cn([ 'flex flex-col', ])">
+					<span :class="cn([ 'text-2xl font-semibold', ])">Упс! Что-то пошло не так...</span>
+				</div>
+				<div :class="cn([ 'w-full max-w-[calc(var(--px)*480)]', ])">
+					<span>Похоже, Вы попали сюда случайно или ссылка сломана.</span>
+				</div>
+			</div>
+			<Button
+				title="Вернуться на главную"
+				@click="goToHome"
+			>Вернуться на главную</Button>
 		</div>
 	</Modal>
 
@@ -162,18 +70,31 @@
 
 	import { Container, Divider, Button } from '@/resources/components/ui'
 	import { Modal                      } from '@/resources/components/shared'
+	import { Skeleton                   } from '@/resources/components/sections'
 
 	import { cn } from '@/utils'
 
 	const APP_TITLE = import.meta.env.VITE_APP_TITLE
+	const MAIN_SITE_URL = import.meta.env.VITE_MAIN_SITE_URL
 
 	/* define client */
 	const client = ref<Client | null>(null)
+
+	const showErrorModal = ref(false)
 
 	const router = useRouter()
 
 	onMounted(() => {
 		const params    = new URLSearchParams(window.location.search)
+
+		const requiredParams = ['client', 'contracts', 'tariff']
+		const missingParams = requiredParams.filter(p => !params.has(p) || !params.get(p))
+
+		if (missingParams.length > 0) {
+			showErrorModal.value = true
+			return
+		}
+
 		const clientRaw = decodeURIComponent(params.get('client') || '')
 		const [lastname = '', firstname = '', middlename = ''] = clientRaw.split('_')
 
@@ -218,6 +139,10 @@
 
 	function goToPayment() {
 		router.push('/payment')
+	}
+
+	function goToHome() {
+		window.location.replace(MAIN_SITE_URL)
 	}
 
 </script>

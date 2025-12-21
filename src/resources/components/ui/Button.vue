@@ -7,11 +7,11 @@
 		disabled
 			? [
 				'',
-				'text-gray',
+				'text-white',
 				'bg-gray-dark',
 				'cursor-not-allowed',
 		] : [
-				'text-background',
+				'text-white',
 				'bg-brand',
 				'md:hover:bg-brand-dark md:active:bg-brand-deep active:bg-brand-deep',
 				'cursor-pointer',
